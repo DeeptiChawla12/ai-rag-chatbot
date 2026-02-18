@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Healthcare RAG Chat</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <style>
+    body {
+      margin: 0;
+      height: 100vh;
+      background: linear-gradient(135deg, #2563eb, #1e3a8a);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: Arial, sans-serif;
+    }
+
+    .chat {
+      width: 400px;
+      height: 620px;
+      background: #fff;
+      border-radius: 16px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+    }
+
+    .header {
+      background: #2563eb;
+      color: #fff;
+      padding: 16px;
+      text-align: center;
+      font-weight: bold;
+    }
+
+    .messages {
+      flex: 1;
+      padding: 12px;
+      overflow-y: auto;
+      background: #f8fafc;
+    }
+
+    .msg {
+      max-width: 75%;
+      padding: 10px 14px;
+      margin-bottom: 10px;
+      border-radius: 14px;
+      font-size: 14px;
+    }
+
+    .user {
+      background: #2563eb;
+      color: white;
+      margin-left: auto;
+    }
+
+    .bot {
+      background: #e5e7eb;
+      color: #111;
+      margin-right: auto;
+    }
+
+    .footer {
+      display: flex;
+      padding: 10px;
+      gap: 8px;
+      border-top: 1px solid #ddd;
+    }
+
+    input {
+      flex: 1;
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      padding: 10px 16px;
+      background: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="chat">
+  <div class="header">Healthcare RAG Assistant</div>
+  <div class="messages" id="messages">
+    <div class="msg bot">👋 Ask me about the healthcare document</div>
+  </div>
+  <div class="footer">
+    <input id="input" placeholder="Type your question..." />
+    <button onclick="send()">Send</button>
+  </div>
+</div>
+
+<script>
+  const messages = document.getElementById("messages");
+  const input = document.getElementById("input");
+
+  function add(text, type) {
+    const div = document.createElement("div");
+    div.className = "msg " + type;
+    div.textContent = text;
+    messages.appendChild(div);
+    messages.scrollTop = messages.scrollHeight;
+  }
+
+  async function send() {
+    const msg = input.value.trim();
+    if (!msg) return;
+
+    add(msg, "user");
+    input.value = "";
+
+    try {
+      const res = await fetch("https://deeptichawla.app.n8n.cloud/webhook/rag-chat-v2", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: msg })
+      });
+
+      const data = await res.json();
+      add(data.reply || data.output || "No response", "bot");
+
+    } catch {
+      add("❌ Server error", "bot");
+    }
+  }
+</script>
+
+</body>
+</html>
