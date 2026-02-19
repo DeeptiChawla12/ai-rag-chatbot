@@ -47,6 +47,7 @@
       margin-bottom: 10px;
       border-radius: 14px;
       font-size: 14px;
+      line-height: 1.4;
     }
 
     .user {
@@ -66,6 +67,7 @@
       padding: 10px;
       gap: 8px;
       border-top: 1px solid #ddd;
+      align-items: center;
     }
 
     input {
@@ -73,15 +75,64 @@
       padding: 10px;
       border-radius: 10px;
       border: 1px solid #ccc;
+      font-size: 14px;
     }
 
-    button {
-      padding: 10px 16px;
+    /* Send icon button */
+
+    .send-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
       background: #2563eb;
-      color: white;
-      border: none;
-      border-radius: 10px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
       cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .send-icon:hover {
+      background: #1e40af;
+    }
+
+    .send-icon svg {
+      width: 20px;
+      height: 20px;
+      fill: white;
+    }
+
+    .send-icon.disabled {
+      opacity: 0.5;
+      pointer-events: none;
+    }
+
+    /* Loader */
+
+    .loader {
+      display: flex;
+      gap: 6px;
+      padding: 10px 14px;
+      background: #e5e7eb;
+      border-radius: 14px;
+      width: fit-content;
+    }
+
+    .dot {
+      width: 6px;
+      height: 6px;
+      background: #555;
+      border-radius: 50%;
+      animation: blink 1.4s infinite both;
+    }
+
+    .dot:nth-child(2) { animation-delay: .2s; }
+    .dot:nth-child(3) { animation-delay: .4s; }
+
+    @keyframes blink {
+      0% { opacity: .2; }
+      20% { opacity: 1; }
+      100% { opacity: .2; }
     }
   </style>
 </head>
@@ -90,18 +141,29 @@
 
 <div class="chat">
   <div class="header">Healthcare RAG Assistant</div>
+
   <div class="messages" id="messages">
     <div class="msg bot">👋 Ask me about the healthcare document</div>
   </div>
+
   <div class="footer">
     <input id="input" placeholder="Type your question..." />
-    <button onclick="send()">Send</button>
+
+    <div id="sendIcon" class="send-icon" onclick="send()">
+      <!-- Paper plane icon -->
+      <svg viewBox="0 0 24 24">
+        <path d="M2 21l21-9L2 3v7l15 2-15 2z"/>
+      </svg>
+    </div>
   </div>
 </div>
 
 <script>
   const messages = document.getElementById("messages");
   const input = document.getElementById("input");
+  const sendIcon = document.getElementById("sendIcon");
+
+  let loaderEl = null;
 
   function add(text, type) {
     const div = document.createElement("div");
@@ -111,28 +173,64 @@
     messages.scrollTop = messages.scrollHeight;
   }
 
+  function showLoader() {
+    loaderEl = document.createElement("div");
+    loaderEl.className = "msg bot loader";
+    loaderEl.innerHTML = `
+      <div class="dot"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
+    `;
+    messages.appendChild(loaderEl);
+    messages.scrollTop = messages.scrollHeight;
+  }
+
+  function removeLoader() {
+    if (loaderEl) {
+      loaderEl.remove();
+      loaderEl = null;
+    }
+  }
+
   async function send() {
     const msg = input.value.trim();
     if (!msg) return;
 
     add(msg, "user");
     input.value = "";
+    input.focus();
+
+    sendIcon.classList.add("disabled");
+    showLoader();
 
     try {
-      const res = await fetch("https://deeptichawla.app.n8n.cloud/webhook/rag-chat-v2", {
+      const res = await fetch("https://deeptichawla790.app.n8n.cloud/webhook/rag-chat-v2", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: msg })
       });
 
       const data = await res.json();
+
+      removeLoader();
       add(data.reply || data.output || "No response", "bot");
 
-    } catch {
+    } catch (error) {
+      removeLoader();
       add("❌ Server error", "bot");
     }
+
+    sendIcon.classList.remove("disabled");
   }
+
+  // Enter key send
+  input.addEventListener("keypress", function(e) {
+    if (e.key === "Enter") {
+      send();
+    }
+  });
 </script>
 
 </body>
 </html>
+
